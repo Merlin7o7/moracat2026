@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7dec9;
+  --foreground: #000000;
+  --brand-green: #045b46;
+  --brand-orange: #f86c2f;
+  --brand-pink: #ffb7b8;
+  --brand-beige: #f7dec9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-green: var(--brand-green);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-beige: var(--brand-beige);
+  --font-sans: var(--font-inter);
+  --font-arabic: var(--font-ibm-plex-arabic);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+/* RTL Support */
+html[dir="rtl"] {
+  font-family: var(--font-ibm-plex-arabic), var(--font-sans), Arial, sans-serif;
+}
+
+html[dir="rtl"] body {
+  font-family: var(--font-ibm-plex-arabic), var(--font-sans), Arial, sans-serif;
+}
+
+/* RTL specific overrides */
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* RTL margin/padding utilities */
+[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* Mobile bottom nav spacing */
+.has-bottom-nav {
+  padding-bottom: 80px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--brand-beige);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #034a38;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
