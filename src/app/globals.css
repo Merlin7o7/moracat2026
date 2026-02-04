@@ -111,8 +111,20 @@ section[dir="rtl"] h2,
 section[dir="rtl"] h3,
 section[dir="rtl"] h4,
 section[dir="rtl"] h5,
-section[dir="rtl"] h6 {
-  font-family: var(--font-heading-ar);
+section[dir="rtl"] h6,
+section[dir="rtl"] h1 *,
+section[dir="rtl"] h2 *,
+section[dir="rtl"] h3 *,
+section[dir="rtl"] h4 *,
+section[dir="rtl"] h5 *,
+section[dir="rtl"] h6 *,
+section[dir="rtl"] h1 span,
+section[dir="rtl"] h2 span,
+section[dir="rtl"] h3 span,
+section[dir="rtl"] h4 span,
+section[dir="rtl"] h5 span,
+section[dir="rtl"] h6 span {
+  font-family: var(--font-heading-ar) !important;
 }
 
 /* ===== RTL Spacing Utilities ===== */
