@@ -2,79 +2,70 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import {
   Cat,
   Package,
-  Clock,
-  Plus,
-  Minus,
-  Sparkles,
+  Palette,
+  Eye,
   Check,
-  AlertCircle,
   ChevronRight,
   ChevronLeft,
-  CreditCard,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button, Card } from "@/components/ui";
 import {
   calculatePrice,
-  formatPrice,
-  formatPriceAr,
-  CAT_TYPE_CONFIG,
+  getTierFeatures,
   TIER_CONFIG,
-  DURATION_CONFIG,
-  ADD_ONS,
+  CAT_TYPE_CONFIG,
+  PARTNER_BRANDS,
   type CatType,
   type SubscriptionTier,
-  type SubscriptionDuration,
-  type SubscriptionConfig,
+  type BrandPreference,
 } from "@/lib/pricing";
 import { useLanguage } from "@/lib/language-context";
 import { translations } from "@/lib/translations";
 
+interface BuilderConfig {
+  catType: CatType;
+  tier: SubscriptionTier;
+  brandPreferences: BrandPreference;
+}
+
 export function SubscriptionBuilder() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [config, setConfig] = useState<SubscriptionConfig>({
-    tier: "premium",
+  const [config, setConfig] = useState<BuilderConfig>({
     catType: "adult",
-    duration: 1,
-    addOns: {},
+    tier: "premium",
+    brandPreferences: {
+      wetFoodBrand: "applaws",
+      treatBrand: "churu",
+    },
   });
   const { language, isRTL } = useLanguage();
   const builder = translations.builder;
   const common = translations.common;
 
   const steps = [
-    { id: "catType", labelKey: "step1" as const, icon: Cat },
-    { id: "tier", labelKey: "step2" as const, icon: Package },
-    { id: "addOns", labelKey: "step3" as const, icon: Sparkles },
-    { id: "duration", labelKey: "step4" as const, icon: Clock },
+    { id: "catProfile", label: { en: "Your Cat", ar: "قطتك" }, icon: Cat },
+    { id: "tier", label: { en: "Choose Plan", ar: "اختر الباقة" }, icon: Package },
+    { id: "customize", label: { en: "Customize", ar: "خصص" }, icon: Palette },
+    { id: "preview", label: { en: "Preview Box", ar: "معاينة الصندوق" }, icon: Eye },
   ];
 
-  const priceBreakdown = useMemo(() => calculatePrice(config), [config]);
-  const price = language === "ar" ? formatPriceAr : formatPrice;
+  const priceBreakdown = useMemo(
+    () => calculatePrice({ tier: config.tier, catType: config.catType, brandPreferences: config.brandPreferences }),
+    [config]
+  );
 
-  const updateConfig = <K extends keyof SubscriptionConfig>(
-    key: K,
-    value: SubscriptionConfig[K]
-  ) => {
-    setConfig((prev) => ({ ...prev, [key]: value }));
-  };
+  const features = useMemo(
+    () => getTierFeatures(config.tier, language),
+    [config.tier, language]
+  );
 
-  const updateAddOn = (addOnId: string, delta: number) => {
-    const addOn = ADD_ONS.find((a) => a.id === addOnId);
-    if (!addOn) return;
-
-    const currentQty = config.addOns[addOnId] || 0;
-    const newQty = Math.max(0, Math.min(addOn.maxQuantity, currentQty + delta));
-
-    setConfig((prev) => ({
-      ...prev,
-      addOns: { ...prev.addOns, [addOnId]: newQty },
-    }));
-  };
+  const Chevron = isRTL ? ChevronLeft : ChevronRight;
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -88,45 +79,17 @@ export function SubscriptionBuilder() {
     }
   };
 
-  const goToStep = (stepIndex: number) => {
-    setCurrentStep(stepIndex);
-  };
-
-  const Chevron = isRTL ? ChevronLeft : ChevronRight;
-
-  const handleCheckout = async () => {
-    setIsCheckingOut(true);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Checkout failed");
-      }
-
-      // Redirect to Stripe Checkout
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error(
-        language === "en"
-          ? "Failed to start checkout. Please try again."
-          : "فشل في بدء الدفع. يرجى المحاولة مرة أخرى."
-      );
-    } finally {
-      setIsCheckingOut(false);
-    }
+  const scrollToWaitlist = () => {
+    const element = document.querySelector("#waitlist");
+    if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section id="builder" className="py-20 bg-gradient-to-b from-white to-[var(--brand-beige)]/30" dir={isRTL ? "rtl" : "ltr"}>
+    <section
+      id="builder"
+      className="py-20 bg-gradient-to-b from-white to-[var(--brand-beige)]/30"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -152,7 +115,7 @@ export function SubscriptionBuilder() {
               {steps.map((step, index) => (
                 <button
                   key={step.id}
-                  onClick={() => goToStep(index)}
+                  onClick={() => setCurrentStep(index)}
                   className="flex items-center"
                 >
                   <motion.div
@@ -172,12 +135,10 @@ export function SubscriptionBuilder() {
                   </motion.div>
                   <span
                     className={`hidden md:block ${isRTL ? "mr-2" : "ml-2"} text-sm font-medium ${
-                      index <= currentStep
-                        ? "text-[var(--brand-green)]"
-                        : "text-gray-400"
+                      index <= currentStep ? "text-[var(--brand-green)]" : "text-gray-400"
                     }`}
                   >
-                    {builder[step.labelKey][language]}
+                    {step.label[language]}
                   </span>
                   {index < steps.length - 1 && (
                     <Chevron className="w-4 h-4 mx-2 text-gray-300" />
@@ -192,10 +153,10 @@ export function SubscriptionBuilder() {
             <div className="lg:col-span-2">
               <Card className="p-6 md:p-8">
                 <AnimatePresence mode="wait">
-                  {/* Step 1: Cat Type */}
+                  {/* Step 1: Cat Profile */}
                   {currentStep === 0 && (
                     <motion.div
-                      key="catType"
+                      key="catProfile"
                       initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
@@ -211,48 +172,43 @@ export function SubscriptionBuilder() {
                       </div>
 
                       <div className="grid sm:grid-cols-2 gap-4">
-                        {(Object.keys(CAT_TYPE_CONFIG) as CatType[]).map(
-                          (catType) => {
-                            const catConfig = CAT_TYPE_CONFIG[catType];
-                            const isSelected = config.catType === catType;
+                        {(Object.keys(CAT_TYPE_CONFIG) as CatType[]).map((catType) => {
+                          const catConfig = CAT_TYPE_CONFIG[catType];
+                          const isSelected = config.catType === catType;
 
-                            return (
-                              <motion.button
-                                key={catType}
-                                onClick={() => updateConfig("catType", catType)}
-                                className={`p-4 rounded-xl border-2 ${isRTL ? "text-right" : "text-left"} transition-all ${
-                                  isSelected
-                                    ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
-                                    : "border-gray-200 hover:border-[var(--brand-green)]/50"
-                                }`}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <h4 className="font-semibold text-[var(--brand-green)]">
-                                      {language === "ar" ? catConfig.labelAr : catConfig.label}
-                                    </h4>
-                                    <p className="text-xs text-[var(--brand-orange)]">
-                                      {language === "ar" ? catConfig.label : catConfig.labelAr}
-                                    </p>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                      {catConfig.description}
-                                    </p>
-                                  </div>
-                                  {isSelected && (
-                                    <Check className="w-5 h-5 text-[var(--brand-green)]" />
-                                  )}
+                          return (
+                            <motion.button
+                              key={catType}
+                              onClick={() => setConfig((prev) => ({ ...prev, catType }))}
+                              className={`p-4 rounded-xl border-2 ${isRTL ? "text-right" : "text-left"} transition-all ${
+                                isSelected
+                                  ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
+                                  : "border-gray-200 hover:border-[var(--brand-green)]/50"
+                              }`}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h4 className="font-semibold text-[var(--brand-green)]">
+                                    {language === "ar" ? catConfig.labelAr : catConfig.label}
+                                  </h4>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {language === "ar" ? catConfig.descriptionAr : catConfig.description}
+                                  </p>
                                 </div>
-                              </motion.button>
-                            );
-                          }
-                        )}
+                                {isSelected && (
+                                  <Check className="w-5 h-5 text-[var(--brand-green)]" />
+                                )}
+                              </div>
+                            </motion.button>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Step 2: Package Tier */}
+                  {/* Step 2: Tier Selection */}
                   {currentStep === 1 && (
                     <motion.div
                       key="tier"
@@ -271,171 +227,15 @@ export function SubscriptionBuilder() {
                       </div>
 
                       <div className="grid sm:grid-cols-2 gap-4">
-                        {(Object.keys(TIER_CONFIG) as SubscriptionTier[]).map(
-                          (tier) => {
-                            const tierConfig = TIER_CONFIG[tier];
-                            const isSelected = config.tier === tier;
-
-                            return (
-                              <motion.button
-                                key={tier}
-                                onClick={() => updateConfig("tier", tier)}
-                                className={`p-4 rounded-xl border-2 ${isRTL ? "text-right" : "text-left"} transition-all ${
-                                  isSelected
-                                    ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
-                                    : "border-gray-200 hover:border-[var(--brand-green)]/50"
-                                }`}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <div className="flex items-start justify-between mb-2">
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: tierConfig.color }}
-                                      />
-                                      <h4 className="font-semibold text-[var(--brand-green)]">
-                                        {language === "ar" ? tierConfig.labelAr : tierConfig.label}
-                                      </h4>
-                                    </div>
-                                    <p className="text-xs text-[var(--brand-orange)]">
-                                      {language === "ar" ? tierConfig.label : tierConfig.labelAr}
-                                    </p>
-                                  </div>
-                                  {isSelected && (
-                                    <Check className="w-5 h-5 text-[var(--brand-green)]" />
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-500 mb-3">
-                                  {tierConfig.description}
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
-                                    {tierConfig.baseWetCans} {language === "ar" ? "علب رطب" : "wet cans"}
-                                  </span>
-                                  <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
-                                    {tierConfig.baseDryKg}{language === "ar" ? " كجم جاف" : "kg dry"}
-                                  </span>
-                                  {tierConfig.includesTreats && (
-                                    <span className="text-xs px-2 py-0.5 bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] rounded">
-                                      + {language === "ar" ? "حلوى" : "Treats"}
-                                    </span>
-                                  )}
-                                  {tierConfig.includesToys && (
-                                    <span className="text-xs px-2 py-0.5 bg-[var(--brand-pink)]/20 text-[var(--brand-orange)] rounded">
-                                      + {language === "ar" ? "ألعاب" : "Toys"}
-                                    </span>
-                                  )}
-                                </div>
-                              </motion.button>
-                            );
-                          }
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 3: Add-ons */}
-                  {currentStep === 2 && (
-                    <motion.div
-                      key="addOns"
-                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-                      className="space-y-6"
-                    >
-                      <div>
-                        <h3 className="text-xl font-bold text-[var(--brand-green)] mb-2">
-                          {builder.addOnsTitle[language]}
-                        </h3>
-                        <p className="text-gray-600 text-sm">
-                          {builder.addOnsSubtitle[language]}
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {ADD_ONS.map((addOn) => {
-                          const qty = config.addOns[addOn.id] || 0;
-
-                          return (
-                            <div
-                              key={addOn.id}
-                              className="flex items-center justify-between p-4 rounded-xl border border-gray-200"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium text-[var(--brand-green)]">
-                                    {language === "ar" ? addOn.labelAr : addOn.label}
-                                  </h4>
-                                  <span className="text-xs text-gray-400">
-                                    {language === "ar" ? addOn.label : addOn.labelAr}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-500">
-                                  {price(addOn.unitCost)} / {addOn.unit}
-                                </p>
-                              </div>
-
-                              <div className="flex items-center gap-3">
-                                <motion.button
-                                  onClick={() => updateAddOn(addOn.id, -1)}
-                                  disabled={qty === 0}
-                                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </motion.button>
-                                <span className="w-8 text-center font-medium">
-                                  {qty}
-                                </span>
-                                <motion.button
-                                  onClick={() => updateAddOn(addOn.id, 1)}
-                                  disabled={qty >= addOn.maxQuantity}
-                                  className="w-8 h-8 rounded-full bg-[var(--brand-green)] text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </motion.button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 4: Duration */}
-                  {currentStep === 3 && (
-                    <motion.div
-                      key="duration"
-                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
-                      className="space-y-6"
-                    >
-                      <div>
-                        <h3 className="text-xl font-bold text-[var(--brand-green)] mb-2">
-                          {builder.durationTitle[language]}
-                        </h3>
-                        <p className="text-gray-600 text-sm">
-                          {builder.durationSubtitle[language]}
-                        </p>
-                      </div>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        {(
-                          Object.keys(DURATION_CONFIG).map(Number) as SubscriptionDuration[]
-                        ).map((duration) => {
-                          const durationConfig = DURATION_CONFIG[duration];
-                          const isSelected = config.duration === duration;
-                          const discount = durationConfig.discountPercentage * 100;
+                        {(Object.keys(TIER_CONFIG) as SubscriptionTier[]).map((tier) => {
+                          const tierConfig = TIER_CONFIG[tier];
+                          const isSelected = config.tier === tier;
 
                           return (
                             <motion.button
-                              key={duration}
-                              onClick={() => updateConfig("duration", duration)}
-                              className={`p-4 rounded-xl border-2 ${isRTL ? "text-right" : "text-left"} transition-all relative overflow-hidden ${
+                              key={tier}
+                              onClick={() => setConfig((prev) => ({ ...prev, tier }))}
+                              className={`p-4 rounded-xl border-2 ${isRTL ? "text-right" : "text-left"} transition-all relative ${
                                 isSelected
                                   ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
                                   : "border-gray-200 hover:border-[var(--brand-green)]/50"
@@ -443,27 +243,208 @@ export function SubscriptionBuilder() {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                             >
-                              {discount > 0 && (
-                                <span className={`absolute top-0 ${isRTL ? "left-0 rounded-br-lg" : "right-0 rounded-bl-lg"} bg-[var(--brand-orange)] text-white text-xs px-2 py-0.5`}>
-                                  {common.save[language]} {discount}%
+                              {tierConfig.isPopular && (
+                                <span className="absolute -top-2 right-4 px-2 py-0.5 bg-[var(--brand-orange)] text-white text-xs rounded-full">
+                                  {common.popular[language]}
                                 </span>
                               )}
-                              <div className="flex items-start justify-between">
+                              <div className="flex items-start justify-between mb-2">
                                 <div>
                                   <h4 className="font-semibold text-[var(--brand-green)]">
-                                    {language === "ar" ? durationConfig.labelAr : durationConfig.label}
+                                    {language === "ar" ? tierConfig.labelAr : tierConfig.label}
                                   </h4>
-                                  <p className="text-xs text-[var(--brand-orange)]">
-                                    {language === "ar" ? durationConfig.label : durationConfig.labelAr}
+                                  <p className="text-sm text-gray-500">
+                                    {language === "ar" ? tierConfig.descriptionAr : tierConfig.description}
                                   </p>
                                 </div>
                                 {isSelected && (
                                   <Check className="w-5 h-5 text-[var(--brand-green)]" />
                                 )}
                               </div>
+                              <div className="flex items-end gap-2 mt-3">
+                                <span className="text-2xl font-bold text-[var(--brand-green)]">
+                                  {tierConfig.fixedPrice}
+                                </span>
+                                <span className="text-sm text-gray-500 mb-0.5">
+                                  {common.sar[language]}{common.perMonth[language]}
+                                </span>
+                              </div>
                             </motion.button>
                           );
                         })}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 3: Brand Customization */}
+                  {currentStep === 2 && (
+                    <motion.div
+                      key="customize"
+                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                      className="space-y-6"
+                    >
+                      <div>
+                        <h3 className="text-xl font-bold text-[var(--brand-green)] mb-2">
+                          {language === "en" ? "Choose Your Brands" : "اختر علاماتك التجارية"}
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          {language === "en"
+                            ? "Select your preferred brands for each product category"
+                            : "اختر علاماتك التجارية المفضلة لكل فئة منتج"}
+                        </p>
+                      </div>
+
+                      {/* Wet Food Brand */}
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--brand-green)] mb-3">
+                          {language === "en" ? "Wet Food Brand" : "علامة الطعام الرطب"}
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {PARTNER_BRANDS.wetFood.map((brand) => (
+                            <button
+                              key={brand.id}
+                              onClick={() =>
+                                setConfig((prev) => ({
+                                  ...prev,
+                                  brandPreferences: {
+                                    ...prev.brandPreferences,
+                                    wetFoodBrand: brand.id as "applaws" | "kitcat",
+                                  },
+                                }))
+                              }
+                              className={`p-4 rounded-xl border-2 transition-all ${
+                                config.brandPreferences.wetFoodBrand === brand.id
+                                  ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                            >
+                              <span className="font-semibold text-[var(--brand-green)]">
+                                {language === "ar" ? brand.nameAr : brand.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Treat Brand (only if tier includes treats) */}
+                      {TIER_CONFIG[config.tier].treatPacks > 0 && (
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--brand-green)] mb-3">
+                            {language === "en" ? "Treat Brand" : "علامة المكافآت"}
+                          </label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {PARTNER_BRANDS.treats.map((brand) => (
+                              <button
+                                key={brand.id}
+                                onClick={() =>
+                                  setConfig((prev) => ({
+                                    ...prev,
+                                    brandPreferences: {
+                                      ...prev.brandPreferences,
+                                      treatBrand: brand.id as "churu" | "kitcat_treats",
+                                    },
+                                  }))
+                                }
+                                className={`p-4 rounded-xl border-2 transition-all ${
+                                  config.brandPreferences.treatBrand === brand.id
+                                    ? "border-[var(--brand-green)] bg-[var(--brand-green)]/5"
+                                    : "border-gray-200 hover:border-gray-300"
+                                }`}
+                              >
+                                <span className="font-semibold text-[var(--brand-green)]">
+                                  {language === "ar" ? brand.nameAr : brand.name}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Fixed brands note */}
+                      <div className="bg-[var(--brand-beige)]/50 rounded-xl p-4">
+                        <p className="text-sm text-gray-600">
+                          <strong>{language === "en" ? "Dry Food:" : "الطعام الجاف:"}</strong>{" "}
+                          {language === "en" ? "Josera Premium" : "جوسيرا المميز"}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <strong>{language === "en" ? "Litter:" : "الرمل:"}</strong>{" "}
+                          {language === "en" ? "BioSand Premium" : "بايوساند المميز"}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 4: Box Preview */}
+                  {currentStep === 3 && (
+                    <motion.div
+                      key="preview"
+                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                      className="space-y-6"
+                    >
+                      <div>
+                        <h3 className="text-xl font-bold text-[var(--brand-green)] mb-2">
+                          {language === "en" ? "Your Box Preview" : "معاينة صندوقك"}
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          {language === "en"
+                            ? "Here's what you'll receive every month"
+                            : "إليك ما ستستلمه كل شهر"}
+                        </p>
+                      </div>
+
+                      {/* Box Visual */}
+                      <div className="relative rounded-2xl overflow-hidden bg-[#1a1a1a]">
+                        <Image
+                          src={
+                            config.tier === "basic"
+                              ? "/images/plan-basic.png"
+                              : config.tier === "premium"
+                              ? "/images/plan-premium.png"
+                              : "/images/plan-ultimate.png"
+                          }
+                          alt="Your subscription box"
+                          width={800}
+                          height={500}
+                          className="w-full h-auto"
+                        />
+                      </div>
+
+                      {/* Brand Summary */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-[var(--brand-beige)]/50 rounded-xl p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            {language === "en" ? "Wet Food" : "طعام رطب"}
+                          </p>
+                          <p className="font-semibold text-[var(--brand-green)]">
+                            {config.brandPreferences.wetFoodBrand === "applaws" ? "Applaws" : "Kit Cat"}
+                          </p>
+                        </div>
+                        <div className="bg-[var(--brand-beige)]/50 rounded-xl p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            {language === "en" ? "Dry Food" : "طعام جاف"}
+                          </p>
+                          <p className="font-semibold text-[var(--brand-green)]">Josera</p>
+                        </div>
+                        {TIER_CONFIG[config.tier].treatPacks > 0 && (
+                          <div className="bg-[var(--brand-beige)]/50 rounded-xl p-4">
+                            <p className="text-xs text-gray-500 mb-1">
+                              {language === "en" ? "Treats" : "مكافآت"}
+                            </p>
+                            <p className="font-semibold text-[var(--brand-green)]">
+                              {config.brandPreferences.treatBrand === "churu" ? "Churu" : "Kit Cat"}
+                            </p>
+                          </div>
+                        )}
+                        <div className="bg-[var(--brand-beige)]/50 rounded-xl p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            {language === "en" ? "Litter" : "رمل"}
+                          </p>
+                          <p className="font-semibold text-[var(--brand-green)]">BioSand</p>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -485,14 +466,9 @@ export function SubscriptionBuilder() {
                       {common.continue[language]}
                     </Button>
                   ) : (
-                    <Button
-                      variant="primary"
-                      onClick={handleCheckout}
-                      isLoading={isCheckingOut}
-                      disabled={!priceBreakdown.isValidConfig}
-                    >
-                      <CreditCard className="w-5 h-5" />
-                      {language === "en" ? "Subscribe Now" : "اشترك الآن"}
+                    <Button variant="primary" onClick={scrollToWaitlist}>
+                      <Sparkles className="w-5 h-5" />
+                      {common.joinWaitlist[language]}
                     </Button>
                   )}
                 </div>
@@ -509,128 +485,63 @@ export function SubscriptionBuilder() {
                 {/* Selected Options */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{builder.step1[language]}</span>
+                    <span className="text-gray-600">{steps[0].label[language]}</span>
                     <span className="font-medium">
-                      {language === "ar" ? CAT_TYPE_CONFIG[config.catType].labelAr : CAT_TYPE_CONFIG[config.catType].label}
+                      {language === "ar"
+                        ? CAT_TYPE_CONFIG[config.catType].labelAr
+                        : CAT_TYPE_CONFIG[config.catType].label}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{builder.step2[language]}</span>
+                    <span className="text-gray-600">{steps[1].label[language]}</span>
                     <span className="font-medium">
-                      {language === "ar" ? TIER_CONFIG[config.tier].labelAr : TIER_CONFIG[config.tier].label}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{builder.step4[language]}</span>
-                    <span className="font-medium">
-                      {language === "ar" ? DURATION_CONFIG[config.duration].labelAr : DURATION_CONFIG[config.duration].label}
+                      {language === "ar"
+                        ? TIER_CONFIG[config.tier].labelAr
+                        : TIER_CONFIG[config.tier].label}
                     </span>
                   </div>
                 </div>
 
-                {/* Item Breakdown */}
+                {/* What's Included */}
                 <div className="border-t border-gray-100 pt-4 mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">
                     {builder.whatsIncluded[language]}
                   </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">{language === "ar" ? "طعام رطب" : "Wet Food"}</span>
-                      <span>{priceBreakdown.itemBreakdown.wetFood.quantity} {language === "ar" ? "علب" : "cans"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">{language === "ar" ? "طعام جاف" : "Dry Food"}</span>
-                      <span>{priceBreakdown.itemBreakdown.dryFood.quantity}{language === "ar" ? " كجم" : "kg"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">{language === "ar" ? "رمل" : "Litter"}</span>
-                      <span>{priceBreakdown.itemBreakdown.litter.quantity}{language === "ar" ? " لتر" : "L"}</span>
-                    </div>
-                    {priceBreakdown.itemBreakdown.treats.quantity > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">{language === "ar" ? "حلوى" : "Treats"}</span>
-                        <span>{priceBreakdown.itemBreakdown.treats.quantity} {language === "ar" ? "عبوات" : "packs"}</span>
-                      </div>
-                    )}
-                    {priceBreakdown.itemBreakdown.gizzardMeal.quantity > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">{language === "ar" ? "قوانص" : "Gizzard Meal"}</span>
-                        <span>{priceBreakdown.itemBreakdown.gizzardMeal.quantity} {language === "ar" ? "عبوات" : "packs"}</span>
-                      </div>
-                    )}
-                    {priceBreakdown.itemBreakdown.toys.quantity > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">{language === "ar" ? "ألعاب" : "Toys"}</span>
-                        <span>{priceBreakdown.itemBreakdown.toys.quantity} {language === "ar" ? "قطع" : "items"}</span>
-                      </div>
-                    )}
-                    {priceBreakdown.itemBreakdown.grooming.quantity > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">{language === "ar" ? "عناية" : "Grooming"}</span>
-                        <span>{priceBreakdown.itemBreakdown.grooming.quantity} {language === "ar" ? "قطع" : "items"}</span>
-                      </div>
-                    )}
-                    {priceBreakdown.itemBreakdown.addOns.quantity > 0 && (
-                      <div className="flex justify-between text-[var(--brand-orange)]">
-                        <span>{builder.step3[language]}</span>
-                        <span>+{priceBreakdown.itemBreakdown.addOns.quantity} {language === "ar" ? "قطع" : "items"}</span>
-                      </div>
-                    )}
-                  </div>
+                  <ul className="space-y-2 text-sm">
+                    {features.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-gray-600">
+                        <Check className="w-4 h-4 text-[var(--brand-green)]" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* Price Calculation */}
-                <div className="border-t border-gray-100 pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{builder.monthlyPrice[language]}</span>
-                    <span>{price(priceBreakdown.monthlyPrice)}</span>
+                {/* Price */}
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-500">
+                      {language === "en" ? "Retail Value" : "قيمة التجزئة"}
+                    </span>
+                    <span className="text-sm line-through text-gray-400">
+                      {priceBreakdown.retailValue} SAR
+                    </span>
                   </div>
-                  {priceBreakdown.durationDiscount > 0 && (
-                    <div className="flex justify-between text-sm text-[var(--brand-green)]">
-                      <span>{builder.durationDiscount[language]}</span>
-                      <span>-{price(priceBreakdown.durationDiscount)}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Final Price */}
-                <div className="border-t border-gray-100 mt-4 pt-4">
                   <div className="flex justify-between items-end">
                     <div>
                       <span className="text-sm text-gray-500">{builder.total[language]}</span>
                       <div className="text-2xl font-bold text-[var(--brand-green)]">
-                        {price(priceBreakdown.finalMonthlyPrice)}
-                        <span className="text-sm font-normal text-gray-500">{common.perMonth[language]}</span>
+                        {priceBreakdown.fixedPrice}
+                        <span className="text-sm font-normal text-gray-500">
+                          {common.perMonth[language]}
+                        </span>
                       </div>
                     </div>
-                    {config.duration > 1 && (
-                      <div className={isRTL ? "text-left" : "text-right"}>
-                        <span className="text-xs text-gray-500">
-                          {config.duration} {language === "ar" ? "أشهر" : "months"}
-                        </span>
-                        <div className="font-semibold text-[var(--brand-orange)]">
-                          {price(priceBreakdown.totalPrice)}
-                        </div>
-                      </div>
-                    )}
+                    <div className="px-2 py-1 bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] rounded-full text-xs font-semibold">
+                      {common.save[language]} {priceBreakdown.savingsPercentage}%
+                    </div>
                   </div>
                 </div>
-
-                {/* Profitability Warning */}
-                {!priceBreakdown.isValidConfig && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2"
-                  >
-                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-800">
-                      {language === "ar"
-                        ? "هذا التكوين يتطلب تعديلات. يرجى تعديل اختياراتك."
-                        : "This configuration requires adjustments. Please modify your selections."}
-                    </p>
-                  </motion.div>
-                )}
               </Card>
             </div>
           </div>

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Calculator } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button, LanguageToggle } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language-context";
@@ -14,7 +13,7 @@ const navLinks = [
   { href: "#how-it-works", labelKey: "howItWorks" as const },
   { href: "#products", labelKey: "products" as const },
   { href: "#subscription", labelKey: "subscription" as const },
-  { href: "#builder", labelKey: "builder" as const },
+  { href: "#vet-support", labelKey: "vetSupport" as const },
   { href: "#about", labelKey: "about" as const },
 ];
 
@@ -90,11 +89,14 @@ export function Header() {
           {/* Right Side Actions */}
           <div className="hidden md:flex items-center gap-4">
             <LanguageToggle variant="minimal" />
-            <Link href="/start">
-              <Button variant="outline" size="sm">
-                {common.startNow[language]}
-              </Button>
-            </Link>
+            <Button
+              onClick={() => scrollToSection("#builder")}
+              variant="outline"
+              size="sm"
+            >
+              <Calculator className="w-4 h-4" />
+              {nav.calculator[language]}
+            </Button>
             <Button
               onClick={() => scrollToSection("#waitlist")}
               variant="primary"
@@ -146,11 +148,14 @@ export function Header() {
                   </button>
                 ))}
                 <div className="flex flex-col gap-2 mt-2">
-                  <Link href="/start">
-                    <Button variant="outline" className="w-full">
-                      {common.startNow[language]}
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={() => scrollToSection("#builder")}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    {nav.calculator[language]}
+                  </Button>
                   <Button
                     onClick={() => scrollToSection("#waitlist")}
                     variant="primary"

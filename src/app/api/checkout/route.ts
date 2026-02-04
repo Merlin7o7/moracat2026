@@ -6,8 +6,6 @@ import {
   type SubscriptionConfig,
   TIER_CONFIG,
   CAT_TYPE_CONFIG,
-  DURATION_CONFIG,
-  ADD_ONS,
 } from "@/lib/pricing";
 
 export async function POST(request: NextRequest) {
@@ -16,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const config: SubscriptionConfig = body.config;
 
-    if (!config || !config.tier || !config.catType || !config.duration) {
+    if (!config || !config.tier || !config.catType) {
       return NextResponse.json(
         { error: "Invalid subscription configuration" },
         { status: 400 }
@@ -27,27 +25,20 @@ export async function POST(request: NextRequest) {
     const priceBreakdown = calculatePrice(config);
     const tierConfig = TIER_CONFIG[config.tier];
     const catConfig = CAT_TYPE_CONFIG[config.catType];
-    const durationConfig = DURATION_CONFIG[config.duration];
 
     // Build line items description
     const description = [
       `${tierConfig.label} Package`,
       `Cat Type: ${catConfig.label}`,
-      `Duration: ${durationConfig.label}`,
+      `Monthly Subscription`,
     ].join(" | ");
 
-    // Build add-ons description
-    const addOnItems = Object.entries(config.addOns)
-      .filter(([, qty]) => qty > 0)
-      .map(([id, qty]) => {
-        const addOn = ADD_ONS.find((a) => a.id === id);
-        return addOn ? `${addOn.label} x${qty}` : null;
-      })
-      .filter(Boolean);
+    // Include brand preferences if set
+    const brandInfo = config.brandPreferences
+      ? ` | Preferences: ${config.brandPreferences.wetFoodBrand}, ${config.brandPreferences.treatBrand}`
+      : "";
 
-    const fullDescription = addOnItems.length > 0
-      ? `${description} | Add-ons: ${addOnItems.join(", ")}`
-      : description;
+    const fullDescription = description + brandInfo;
 
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -64,7 +55,7 @@ export async function POST(request: NextRequest) {
               description: fullDescription,
               images: ["https://moracat.co/og-image.png"],
             },
-            unit_amount: Math.round(priceBreakdown.finalMonthlyPrice * 100), // Convert to halalas
+            unit_amount: Math.round(priceBreakdown.fixedPrice * 100), // Convert to halalas
             recurring: {
               interval: "month",
               interval_count: 1,
@@ -77,15 +68,13 @@ export async function POST(request: NextRequest) {
         metadata: {
           tier: config.tier,
           catType: config.catType,
-          duration: config.duration.toString(),
-          addOns: JSON.stringify(config.addOns),
+          brandPreferences: JSON.stringify(config.brandPreferences || {}),
           userId: session?.user?.id || "",
         },
       },
       metadata: {
         tier: config.tier,
         catType: config.catType,
-        duration: config.duration.toString(),
       },
       success_url: `${process.env.NEXTAUTH_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/#builder?canceled=true`,

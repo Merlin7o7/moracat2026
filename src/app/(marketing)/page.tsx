@@ -2,8 +2,13 @@ import {
   Hero,
   HowItWorks,
   Products,
+  BrandGrid,
   Subscription,
+  BoxShowcase,
+  SavingsCalculator,
   SubscriptionBuilder,
+  VetSupport,
+  Ecosystem,
   About,
   FAQ,
   WaitlistForm,
@@ -15,8 +20,13 @@ export default function Home() {
       <Hero />
       <HowItWorks />
       <Products />
+      <BrandGrid />
+      <VetSupport />
       <Subscription />
+      <BoxShowcase />
+      <SavingsCalculator />
       <SubscriptionBuilder />
+      <Ecosystem />
       <About />
       <FAQ />
       <WaitlistForm />

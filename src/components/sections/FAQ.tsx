@@ -2,53 +2,28 @@
 
 import { motion } from "framer-motion";
 import { Accordion } from "@/components/ui";
-
-const faqItems = [
-  {
-    title: "What makes Moracat different from other cat food brands?",
-    content:
-      "Moracat is specifically designed for the Saudi market with premium, vet-approved ingredients. We use no artificial preservatives or fillers, and all our recipes are formulated by veterinary nutritionists. Plus, we offer convenient doorstep delivery across all of KSA.",
-  },
-  {
-    title: "How do I know which food is right for my cat?",
-    content:
-      "When you sign up, we'll ask about your cat's age, breed, weight, and any dietary requirements. Our nutrition experts will recommend the perfect formula. You can also consult our in-house vets for personalized advice at no extra cost.",
-  },
-  {
-    title: "Can I change my subscription plan?",
-    content:
-      "Absolutely! You can upgrade, downgrade, pause, or cancel your subscription at any time through your account dashboard. Changes take effect from your next billing cycle. No penalties or hidden fees.",
-  },
-  {
-    title: "How fresh is the food, and how is it stored?",
-    content:
-      "Our food is freshly prepared and packaged in temperature-controlled facilities. We use nitrogen-flushed packaging to preserve freshness without artificial preservatives. Store in a cool, dry place and use within 4 weeks of opening for optimal nutrition.",
-  },
-  {
-    title: "Do you deliver to all areas in Saudi Arabia?",
-    content:
-      "Yes! We deliver to all major cities and regions across Saudi Arabia, including Riyadh, Jeddah, Dammam, Makkah, Madinah, and more. Delivery is free on all subscription orders.",
-  },
-  {
-    title: "What if my cat doesn't like the food?",
-    content:
-      "We offer a 30-day satisfaction guarantee. If your cat doesn't love our food, contact us within 30 days of delivery, and we'll either exchange it for a different formula or provide a full refund - no questions asked.",
-  },
-  {
-    title: "Is your packaging eco-friendly?",
-    content:
-      "Yes! We're committed to sustainability. Our packaging is made from recycled materials and is fully recyclable. Our delivery boxes are designed to be reused or easily recycled.",
-  },
-  {
-    title: "Can I purchase one-time orders without subscribing?",
-    content:
-      "Of course! While subscriptions offer the best value with free delivery and discounts, you can also make one-time purchases from our products page. Standard delivery fees apply for non-subscription orders.",
-  },
-];
+import { useLanguage } from "@/lib/language-context";
+import { translations } from "@/lib/translations";
 
 export function FAQ() {
+  const { language, isRTL } = useLanguage();
+  const faq = translations.faq;
+
+  const faqItems = [
+    { title: faq.q1[language], content: faq.a1[language] },
+    { title: faq.q2[language], content: faq.a2[language] },
+    { title: faq.q3[language], content: faq.a3[language] },
+    { title: faq.q4[language], content: faq.a4[language] },
+    { title: faq.q5[language], content: faq.a5[language] },
+    { title: faq.q6[language], content: faq.a6[language] },
+  ];
+
   return (
-    <section id="faq" className="py-20 md:py-32 bg-white">
+    <section
+      id="faq"
+      className="py-20 md:py-32 bg-white"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           {/* Section Header */}
@@ -60,14 +35,13 @@ export function FAQ() {
             className="text-center mb-12"
           >
             <span className="inline-block text-[var(--brand-orange)] font-semibold mb-3">
-              FAQ
+              {faq.badge[language]}
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--brand-green)] mb-4">
-              Frequently Asked Questions
+              {faq.title[language]}
             </h2>
             <p className="text-gray-600 text-lg">
-              Got questions? We&apos;ve got answers. If you can&apos;t find what you&apos;re
-              looking for, feel free to contact our support team.
+              {faq.subtitle[language]}
             </p>
           </motion.div>
 
@@ -89,14 +63,16 @@ export function FAQ() {
             transition={{ delay: 0.4 }}
             className="text-center mt-10"
           >
-            <p className="text-gray-600 mb-2">Still have questions?</p>
+            <p className="text-gray-600 mb-2">
+              {language === "en" ? "Still have questions?" : "لا زال لديك أسئلة؟"}
+            </p>
             <a
-              href="mailto:hello@moracat.sa"
-              className="inline-flex items-center gap-2 text-[var(--brand-green)] font-semibold hover:text-[var(--brand-orange)] transition-colors"
+              href="mailto:hello@moracat.co"
+              className={`inline-flex items-center gap-2 text-[var(--brand-green)] font-semibold hover:text-[var(--brand-orange)] transition-colors ${isRTL ? "flex-row-reverse" : ""}`}
             >
-              Contact our support team
+              {language === "en" ? "Contact our support team" : "تواصل مع فريق الدعم"}
               <svg
-                className="w-4 h-4"
+                className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

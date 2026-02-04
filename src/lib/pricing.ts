@@ -1,387 +1,269 @@
 /**
- * Moracat Subscription Pricing Calculator
- * Based on MoraCat_Optimized_Subscription_Strategy_Mixed_Diet_Approach
+ * Moracat Subscription Pricing
+ * Fixed-tier pricing model based on actual business requirements
  *
- * Pricing Formula: Final Price = (Product Cost + 8% Overhead + SAR 46 Operations + 20% Profit) ÷ 0.971
+ * We are a CURATION service, NOT a manufacturer.
+ * We curate premium brands: Josera, Applaws, BioSand, Churu, Kit Cat
  */
 
-// Product costs (SAR)
-export const PRODUCT_COSTS = {
-  wetFood: 3.25,      // SAR per can
-  dryFood: 5.64,      // SAR per kg
-  litter: 2.71,       // SAR per liter
-  treats: 29.40,      // SAR per pack
-  toys: 15.00,        // SAR per item
-  grooming: 10.00,    // SAR per item
-  gizzardMeal: 35.00, // SAR per pack
-} as const;
-
-// Fixed costs
-export const FIXED_COSTS = {
-  operationsPerBox: 46,  // SAR per box (packaging, logistics, fulfillment)
-  overheadPercentage: 0.08, // 8% overhead
-  minProfitMargin: 0.20, // 20% minimum profit margin
-  vatAdjustment: 0.971, // VAT adjustment factor
+// Partner Brands
+export const PARTNER_BRANDS = {
+  wetFood: [
+    { id: 'applaws', name: 'Applaws', nameAr: 'أبلاوز' },
+    { id: 'kitcat', name: 'Kit Cat', nameAr: 'كيت كات' },
+  ],
+  dryFood: [
+    { id: 'josera', name: 'Josera', nameAr: 'جوسيرا' },
+  ],
+  litter: [
+    { id: 'biosand', name: 'BioSand', nameAr: 'بايوساند' },
+  ],
+  treats: [
+    { id: 'churu', name: 'Churu', nameAr: 'تشورو' },
+    { id: 'kitcat_treats', name: 'Kit Cat Treats', nameAr: 'حلوى كيت كات' },
+  ],
 } as const;
 
 // Cat types with feeding multipliers
-export type CatType = 'adult' | 'kitten' | 'multiCat2to3' | 'multiCat4plus';
+export type CatType = 'adult' | 'kitten' | 'senior' | 'multiCat';
 
 export const CAT_TYPE_CONFIG: Record<CatType, {
   label: string;
   labelAr: string;
-  feedingMultiplier: number;
+  quantityMultiplier: number;
   description: string;
+  descriptionAr: string;
 }> = {
   adult: {
     label: 'Adult Cat',
     labelAr: 'قط بالغ',
-    feedingMultiplier: 1.0,
-    description: '1 adult cat (1+ years)',
+    quantityMultiplier: 1.0,
+    description: '1-7 years old',
+    descriptionAr: 'من 1-7 سنوات',
   },
   kitten: {
     label: 'Kitten',
-    labelAr: 'قطة صغيرة',
-    feedingMultiplier: 0.75,
-    description: '1 kitten (under 1 year)',
+    labelAr: 'قط صغير',
+    quantityMultiplier: 0.75,
+    description: 'Under 1 year old',
+    descriptionAr: 'أقل من سنة',
   },
-  multiCat2to3: {
-    label: 'Multi-Cat (2-3)',
-    labelAr: 'عدة قطط (2-3)',
-    feedingMultiplier: 2.5,
-    description: '2-3 cats household',
+  senior: {
+    label: 'Senior Cat',
+    labelAr: 'قط كبير',
+    quantityMultiplier: 0.85,
+    description: '7+ years old',
+    descriptionAr: 'أكثر من 7 سنوات',
   },
-  multiCat4plus: {
-    label: 'Multi-Cat (4+)',
-    labelAr: 'عدة قطط (4+)',
-    feedingMultiplier: 4.0,
-    description: '4+ cats household',
+  multiCat: {
+    label: 'Multiple Cats',
+    labelAr: 'عدة قطط',
+    quantityMultiplier: 2.0,
+    description: '2 or more cats (doubles quantities)',
+    descriptionAr: 'قطتان أو أكثر (تضاعف الكميات)',
   },
 };
 
-// Subscription tiers
+// Subscription tiers - FIXED PRICING MODEL
 export type SubscriptionTier = 'basic' | 'premium' | 'luxury' | 'ultimate';
 
 export interface TierConfig {
   label: string;
   labelAr: string;
   description: string;
+  descriptionAr: string;
   color: string;
-  baseWetCans: number;       // Cans of wet food per month
-  baseDryKg: number;         // Kg of dry food per month
-  baseLitterL: number;       // Liters of litter per month
-  includesTreats: boolean;
-  includesGizzardMeal: boolean;
-  includesToys: boolean;
-  includesGrooming: boolean;
-  treatsPerMonth: number;    // Number of treat packs
-  toysPerMonth: number;      // Number of toys
-  groomingPerMonth: number;  // Number of grooming items
-  gizzardMealsPerMonth: number;
+  // Fixed monthly price in SAR
+  fixedPrice: number;
+  // Estimated retail value (for savings display)
+  retailValue: number;
+  // Quantities included
+  wetCans: number;
+  dryKg: number;
+  litterL: number;
+  treatPacks: number;
+  toys: number;
+  groomingItems: number;
+  gizzardMeals: number;
+  // Flags
+  isPopular: boolean;
 }
 
 export const TIER_CONFIG: Record<SubscriptionTier, TierConfig> = {
   basic: {
-    label: 'Basic',
-    labelAr: 'أساسي',
-    description: 'Essential nutrition for your cat',
+    label: 'Essential',
+    labelAr: 'الأساسية',
+    description: 'Complete nutrition for your cat',
+    descriptionAr: 'تغذية كاملة لقطتك',
     color: '#f7dec9', // beige
-    baseWetCans: 15,
-    baseDryKg: 1.5,
-    baseLitterL: 10,
-    includesTreats: false,
-    includesGizzardMeal: false,
-    includesToys: false,
-    includesGrooming: false,
-    treatsPerMonth: 0,
-    toysPerMonth: 0,
-    groomingPerMonth: 0,
-    gizzardMealsPerMonth: 0,
+    fixedPrice: 260,
+    retailValue: 325, // ~20% savings
+    wetCans: 30,
+    dryKg: 2.5,
+    litterL: 12,
+    treatPacks: 0,
+    toys: 0,
+    groomingItems: 0,
+    gizzardMeals: 0,
+    isPopular: false,
   },
   premium: {
     label: 'Premium',
-    labelAr: 'متميز',
-    description: 'Quality nutrition with treats',
-    color: '#ffb7b8', // pink
-    baseWetCans: 20,
-    baseDryKg: 2,
-    baseLitterL: 15,
-    includesTreats: true,
-    includesGizzardMeal: false,
-    includesToys: false,
-    includesGrooming: false,
-    treatsPerMonth: 1,
-    toysPerMonth: 0,
-    groomingPerMonth: 0,
-    gizzardMealsPerMonth: 0,
+    labelAr: 'المتميزة',
+    description: 'Nutrition plus treats for extra joy',
+    descriptionAr: 'تغذية مع مكافآت لسعادة أكبر',
+    color: '#045b46', // green (popular)
+    fixedPrice: 305,
+    retailValue: 381, // ~20% savings
+    wetCans: 30,
+    dryKg: 2.5,
+    litterL: 12,
+    treatPacks: 1,
+    toys: 0,
+    groomingItems: 0,
+    gizzardMeals: 0,
+    isPopular: true,
   },
   luxury: {
-    label: 'Luxury',
-    labelAr: 'فاخر',
-    description: 'Premium experience with toys & treats',
+    label: 'Complete',
+    labelAr: 'الشاملة',
+    description: 'Full care with toys and extra treats',
+    descriptionAr: 'عناية كاملة مع ألعاب ومكافآت إضافية',
     color: '#f86c2f', // orange
-    baseWetCans: 25,
-    baseDryKg: 2.5,
-    baseLitterL: 20,
-    includesTreats: true,
-    includesGizzardMeal: true,
-    includesToys: true,
-    includesGrooming: false,
-    treatsPerMonth: 2,
-    toysPerMonth: 1,
-    groomingPerMonth: 0,
-    gizzardMealsPerMonth: 1,
+    fixedPrice: 365,
+    retailValue: 456, // ~20% savings
+    wetCans: 30,
+    dryKg: 2.5,
+    litterL: 12,
+    treatPacks: 2,
+    toys: 1,
+    groomingItems: 0,
+    gizzardMeals: 0,
+    isPopular: false,
   },
   ultimate: {
-    label: 'Ultimate',
-    labelAr: 'الأفضل',
+    label: 'Royal',
+    labelAr: 'الملكية',
     description: 'The complete royal treatment',
-    color: '#045b46', // green
-    baseWetCans: 30,
-    baseDryKg: 3,
-    baseLitterL: 25,
-    includesTreats: true,
-    includesGizzardMeal: true,
-    includesToys: true,
-    includesGrooming: true,
-    treatsPerMonth: 2,
-    toysPerMonth: 2,
-    groomingPerMonth: 1,
-    gizzardMealsPerMonth: 2,
+    descriptionAr: 'تجربة العناية الملكية الكاملة',
+    color: '#ffb7b8', // pink
+    fixedPrice: 430,
+    retailValue: 538, // ~20% savings
+    wetCans: 30,
+    dryKg: 2.5,
+    litterL: 12,
+    treatPacks: 2,
+    toys: 1,
+    groomingItems: 1,
+    gizzardMeals: 1,
+    isPopular: false,
   },
 };
 
-// Duration discounts
-export type SubscriptionDuration = 1 | 3 | 6 | 12;
-
-export const DURATION_CONFIG: Record<SubscriptionDuration, {
-  label: string;
-  labelAr: string;
-  discountPercentage: number;
-}> = {
-  1: { label: '1 Month', labelAr: 'شهر واحد', discountPercentage: 0 },
-  3: { label: '3 Months', labelAr: '3 أشهر', discountPercentage: 0.05 },
-  6: { label: '6 Months', labelAr: '6 أشهر', discountPercentage: 0.10 },
-  12: { label: '12 Months', labelAr: '12 شهر', discountPercentage: 0.15 },
-};
-
-// Add-ons configuration
-export interface AddOn {
-  id: string;
-  label: string;
-  labelAr: string;
-  description: string;
-  unitCost: number;
-  unit: string;
-  maxQuantity: number;
+// Flavor/Brand preferences for customization
+export interface BrandPreference {
+  wetFoodBrand: 'applaws' | 'kitcat';
+  treatBrand: 'churu' | 'kitcat_treats';
 }
-
-export const ADD_ONS: AddOn[] = [
-  {
-    id: 'extraWetFood',
-    label: 'Extra Wet Food',
-    labelAr: 'طعام رطب إضافي',
-    description: 'Additional premium wet food cans',
-    unitCost: PRODUCT_COSTS.wetFood,
-    unit: 'cans',
-    maxQuantity: 20,
-  },
-  {
-    id: 'extraDryFood',
-    label: 'Extra Dry Food',
-    labelAr: 'طعام جاف إضافي',
-    description: 'Additional premium dry food',
-    unitCost: PRODUCT_COSTS.dryFood,
-    unit: 'kg',
-    maxQuantity: 5,
-  },
-  {
-    id: 'extraLitter',
-    label: 'Extra Litter',
-    labelAr: 'رمل إضافي',
-    description: 'Additional premium litter',
-    unitCost: PRODUCT_COSTS.litter,
-    unit: 'liters',
-    maxQuantity: 20,
-  },
-  {
-    id: 'extraTreats',
-    label: 'Extra Treats',
-    labelAr: 'حلوى إضافية',
-    description: 'Additional treat packs',
-    unitCost: PRODUCT_COSTS.treats,
-    unit: 'packs',
-    maxQuantity: 4,
-  },
-  {
-    id: 'gizzardMeal',
-    label: 'Gizzard Meal',
-    labelAr: 'وجبة قوانص',
-    description: 'Premium gizzard meal supplement',
-    unitCost: PRODUCT_COSTS.gizzardMeal,
-    unit: 'packs',
-    maxQuantity: 4,
-  },
-  {
-    id: 'toys',
-    label: 'Interactive Toys',
-    labelAr: 'ألعاب تفاعلية',
-    description: 'Fun toys for your cat',
-    unitCost: PRODUCT_COSTS.toys,
-    unit: 'items',
-    maxQuantity: 3,
-  },
-  {
-    id: 'grooming',
-    label: 'Grooming Items',
-    labelAr: 'أدوات العناية',
-    description: 'Grooming and care products',
-    unitCost: PRODUCT_COSTS.grooming,
-    unit: 'items',
-    maxQuantity: 3,
-  },
-];
 
 // Subscription configuration
 export interface SubscriptionConfig {
   tier: SubscriptionTier;
   catType: CatType;
-  duration: SubscriptionDuration;
-  addOns: Record<string, number>; // addOnId -> quantity
+  brandPreferences?: BrandPreference;
 }
 
-// Price breakdown
+// Price breakdown for display
 export interface PriceBreakdown {
-  productCost: number;
-  overhead: number;
-  operations: number;
-  profit: number;
-  subtotal: number;
-  vatAdjustment: number;
-  monthlyPrice: number;
-  durationDiscount: number;
-  finalMonthlyPrice: number;
-  totalPrice: number;
-  isValidConfig: boolean;
-  marginPercentage: number;
-  itemBreakdown: {
-    wetFood: { quantity: number; cost: number };
-    dryFood: { quantity: number; cost: number };
-    litter: { quantity: number; cost: number };
-    treats: { quantity: number; cost: number };
-    gizzardMeal: { quantity: number; cost: number };
-    toys: { quantity: number; cost: number };
-    grooming: { quantity: number; cost: number };
-    addOns: { quantity: number; cost: number };
+  fixedPrice: number;
+  retailValue: number;
+  savings: number;
+  savingsPercentage: number;
+  quantities: {
+    wetCans: number;
+    dryKg: number;
+    litterL: number;
+    treatPacks: number;
+    toys: number;
+    groomingItems: number;
+    gizzardMeals: number;
   };
 }
 
 /**
- * Calculate the subscription price based on configuration
+ * Calculate the subscription price and quantities based on configuration
  */
 export function calculatePrice(config: SubscriptionConfig): PriceBreakdown {
   const tier = TIER_CONFIG[config.tier];
-  const catMultiplier = CAT_TYPE_CONFIG[config.catType].feedingMultiplier;
-  const durationConfig = DURATION_CONFIG[config.duration];
+  const catMultiplier = CAT_TYPE_CONFIG[config.catType].quantityMultiplier;
 
-  // Calculate base quantities with cat type multiplier
-  const wetFoodQty = Math.ceil(tier.baseWetCans * catMultiplier);
-  const dryFoodQty = tier.baseDryKg * catMultiplier;
-  const litterQty = Math.ceil(tier.baseLitterL * catMultiplier);
-  const treatsQty = tier.treatsPerMonth;
-  const gizzardQty = tier.gizzardMealsPerMonth;
-  const toysQty = tier.toysPerMonth;
-  const groomingQty = tier.groomingPerMonth;
+  // Calculate quantities (multiplied for multi-cat households)
+  const quantities = {
+    wetCans: Math.ceil(tier.wetCans * catMultiplier),
+    dryKg: tier.dryKg * catMultiplier,
+    litterL: Math.ceil(tier.litterL * catMultiplier),
+    treatPacks: tier.treatPacks,
+    toys: tier.toys,
+    groomingItems: tier.groomingItems,
+    gizzardMeals: tier.gizzardMeals,
+  };
 
-  // Calculate base product costs
-  const wetFoodCost = wetFoodQty * PRODUCT_COSTS.wetFood;
-  const dryFoodCost = dryFoodQty * PRODUCT_COSTS.dryFood;
-  const litterCost = litterQty * PRODUCT_COSTS.litter;
-  const treatsCost = treatsQty * PRODUCT_COSTS.treats;
-  const gizzardCost = gizzardQty * PRODUCT_COSTS.gizzardMeal;
-  const toysCost = toysQty * PRODUCT_COSTS.toys;
-  const groomingCost = groomingQty * PRODUCT_COSTS.grooming;
+  // Price scales with quantity for multi-cat
+  const priceMultiplier = config.catType === 'multiCat' ? 1.8 : 1; // 80% more for multi-cat (not 100% - bulk discount)
+  const fixedPrice = Math.round(tier.fixedPrice * priceMultiplier);
+  const retailValue = Math.round(tier.retailValue * priceMultiplier);
 
-  // Calculate add-ons cost
-  let addOnsCost = 0;
-  let addOnsQty = 0;
-  for (const addOn of ADD_ONS) {
-    const qty = config.addOns[addOn.id] || 0;
-    if (qty > 0) {
-      addOnsCost += qty * addOn.unitCost;
-      addOnsQty += qty;
-    }
-  }
-
-  // Total product cost
-  const productCost = wetFoodCost + dryFoodCost + litterCost + treatsCost +
-                      gizzardCost + toysCost + groomingCost + addOnsCost;
-
-  // Calculate overhead (8% of product cost)
-  const overhead = productCost * FIXED_COSTS.overheadPercentage;
-
-  // Operations cost (fixed per box)
-  const operations = FIXED_COSTS.operationsPerBox;
-
-  // Calculate required profit (20% minimum)
-  const costBeforeProfit = productCost + overhead + operations;
-  const profit = costBeforeProfit * FIXED_COSTS.minProfitMargin;
-
-  // Subtotal before VAT adjustment
-  const subtotal = costBeforeProfit + profit;
-
-  // Apply VAT adjustment (divide by 0.971)
-  const vatAdjustment = subtotal / FIXED_COSTS.vatAdjustment - subtotal;
-  const monthlyPrice = subtotal + vatAdjustment;
-
-  // Apply duration discount
-  const discountAmount = monthlyPrice * durationConfig.discountPercentage;
-  const finalMonthlyPrice = monthlyPrice - discountAmount;
-
-  // Total price for the subscription period
-  const totalPrice = finalMonthlyPrice * config.duration;
-
-  // Calculate actual margin percentage
-  const marginPercentage = (finalMonthlyPrice - productCost - overhead - operations) / finalMonthlyPrice;
-
-  // Validate configuration (margin must be at least 20%)
-  const isValidConfig = marginPercentage >= FIXED_COSTS.minProfitMargin;
+  const savings = retailValue - fixedPrice;
+  const savingsPercentage = Math.round((savings / retailValue) * 100);
 
   return {
-    productCost: roundToTwo(productCost),
-    overhead: roundToTwo(overhead),
-    operations: roundToTwo(operations),
-    profit: roundToTwo(profit),
-    subtotal: roundToTwo(subtotal),
-    vatAdjustment: roundToTwo(vatAdjustment),
-    monthlyPrice: roundToTwo(monthlyPrice),
-    durationDiscount: roundToTwo(discountAmount),
-    finalMonthlyPrice: roundToTwo(finalMonthlyPrice),
-    totalPrice: roundToTwo(totalPrice),
-    isValidConfig,
-    marginPercentage: roundToTwo(marginPercentage * 100),
-    itemBreakdown: {
-      wetFood: { quantity: wetFoodQty, cost: roundToTwo(wetFoodCost) },
-      dryFood: { quantity: roundToTwo(dryFoodQty), cost: roundToTwo(dryFoodCost) },
-      litter: { quantity: litterQty, cost: roundToTwo(litterCost) },
-      treats: { quantity: treatsQty, cost: roundToTwo(treatsCost) },
-      gizzardMeal: { quantity: gizzardQty, cost: roundToTwo(gizzardCost) },
-      toys: { quantity: toysQty, cost: roundToTwo(toysCost) },
-      grooming: { quantity: groomingQty, cost: roundToTwo(groomingCost) },
-      addOns: { quantity: addOnsQty, cost: roundToTwo(addOnsCost) },
-    },
+    fixedPrice,
+    retailValue,
+    savings,
+    savingsPercentage,
+    quantities,
   };
 }
 
 /**
- * Get the default configuration for a tier
+ * Get all tier prices for comparison
  */
-export function getDefaultConfig(tier: SubscriptionTier = 'premium'): SubscriptionConfig {
+export function getAllTierPrices(catType: CatType = 'adult'): Record<SubscriptionTier, PriceBreakdown> {
+  const tiers: SubscriptionTier[] = ['basic', 'premium', 'luxury', 'ultimate'];
+  const prices: Partial<Record<SubscriptionTier, PriceBreakdown>> = {};
+
+  for (const tier of tiers) {
+    prices[tier] = calculatePrice({ tier, catType });
+  }
+
+  return prices as Record<SubscriptionTier, PriceBreakdown>;
+}
+
+/**
+ * Calculate annual savings compared to retail
+ */
+export function calculateAnnualSavings(config: SubscriptionConfig): number {
+  const breakdown = calculatePrice(config);
+  return breakdown.savings * 12;
+}
+
+/**
+ * Calculate savings vs current monthly spend
+ */
+export function calculateSavingsVsCurrentSpend(
+  currentMonthlySpend: number,
+  tier: SubscriptionTier,
+  catType: CatType = 'adult'
+): { monthly: number; annual: number; percentage: number } {
+  const breakdown = calculatePrice({ tier, catType });
+  const monthlySavings = currentMonthlySpend - breakdown.fixedPrice;
+  const annualSavings = monthlySavings * 12;
+  const percentage = Math.round((monthlySavings / currentMonthlySpend) * 100);
+
   return {
-    tier,
-    catType: 'adult',
-    duration: 1,
-    addOns: {},
+    monthly: Math.max(0, monthlySavings),
+    annual: Math.max(0, annualSavings),
+    percentage: Math.max(0, percentage),
   };
 }
 
@@ -400,62 +282,35 @@ export function formatPriceAr(amount: number): string {
 }
 
 /**
- * Round to two decimal places
+ * Get tier features as a list for display
  */
-function roundToTwo(num: number): number {
-  return Math.round((num + Number.EPSILON) * 100) / 100;
-}
+export function getTierFeatures(tier: SubscriptionTier, language: 'en' | 'ar'): string[] {
+  const config = TIER_CONFIG[tier];
+  const features: string[] = [];
 
-/**
- * Check if a configuration meets minimum profit margin
- */
-export function isConfigProfitable(config: SubscriptionConfig): boolean {
-  const breakdown = calculatePrice(config);
-  return breakdown.isValidConfig;
-}
-
-/**
- * Get savings amount for a duration
- */
-export function getSavingsForDuration(
-  config: SubscriptionConfig,
-  duration: SubscriptionDuration
-): number {
-  const baseConfig = { ...config, duration: 1 as SubscriptionDuration };
-  const basePrice = calculatePrice(baseConfig).finalMonthlyPrice;
-
-  const durationConfig = { ...config, duration };
-  const durationPrice = calculatePrice(durationConfig).finalMonthlyPrice;
-
-  return roundToTwo((basePrice - durationPrice) * duration);
-}
-
-/**
- * Get pre-defined package prices (for existing subscription component)
- */
-export function getPackagePrices(): Record<string, { monthly: number; yearly: number }> {
-  const tiers: SubscriptionTier[] = ['basic', 'premium', 'luxury', 'ultimate'];
-  const packages: Record<string, { monthly: number; yearly: number }> = {};
-
-  for (const tier of tiers) {
-    const monthlyConfig: SubscriptionConfig = {
-      tier,
-      catType: 'adult',
-      duration: 1,
-      addOns: {},
-    };
-    const yearlyConfig: SubscriptionConfig = {
-      tier,
-      catType: 'adult',
-      duration: 12,
-      addOns: {},
-    };
-
-    packages[tier] = {
-      monthly: calculatePrice(monthlyConfig).finalMonthlyPrice,
-      yearly: calculatePrice(yearlyConfig).finalMonthlyPrice,
-    };
+  if (language === 'en') {
+    features.push(`${config.wetCans} premium wet food cans`);
+    features.push(`${config.dryKg}kg dry food`);
+    features.push(`${config.litterL}L premium litter`);
+    if (config.treatPacks > 0) features.push(`${config.treatPacks} treat pack${config.treatPacks > 1 ? 's' : ''}`);
+    if (config.toys > 0) features.push(`${config.toys} interactive toy${config.toys > 1 ? 's' : ''}`);
+    if (config.groomingItems > 0) features.push(`${config.groomingItems} grooming item${config.groomingItems > 1 ? 's' : ''}`);
+    if (config.gizzardMeals > 0) features.push(`${config.gizzardMeals} gizzard meal${config.gizzardMeals > 1 ? 's' : ''}`);
+  } else {
+    features.push(`${config.wetCans} علبة طعام رطب فاخر`);
+    features.push(`${config.dryKg} كجم طعام جاف`);
+    features.push(`${config.litterL} لتر رمل فاخر`);
+    if (config.treatPacks > 0) features.push(`${config.treatPacks} ${config.treatPacks > 1 ? 'عبوات' : 'عبوة'} مكافآت`);
+    if (config.toys > 0) features.push(`${config.toys} ${config.toys > 1 ? 'ألعاب' : 'لعبة'} تفاعلية`);
+    if (config.groomingItems > 0) features.push(`${config.groomingItems} ${config.groomingItems > 1 ? 'أدوات' : 'أداة'} عناية`);
+    if (config.gizzardMeals > 0) features.push(`${config.gizzardMeals} ${config.gizzardMeals > 1 ? 'وجبات' : 'وجبة'} قوانص`);
   }
 
-  return packages;
+  return features;
 }
+
+// Legacy exports for compatibility
+export type SubscriptionDuration = 1;
+export const DURATION_CONFIG = {
+  1: { label: 'Monthly', labelAr: 'شهري', discountPercentage: 0 },
+} as const;
