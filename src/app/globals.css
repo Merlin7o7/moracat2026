@@ -1,5 +1,42 @@
 @import "tailwindcss";
 
+/* ===== Custom Font Faces ===== */
+
+/* English Fonts */
+@font-face {
+  font-family: 'TAN Tangkiwood';
+  src: url('/fonts/TANTangkiwood-Display.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Garet';
+  src: url('/fonts/Garet-Book.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Arabic Fonts */
+@font-face {
+  font-family: 'Ostouri';
+  src: url('/fonts/Ostouri.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Myriad Pro';
+  src: url('/fonts/MYRIADPRO-REGULAR.OTF') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== CSS Variables ===== */
 :root {
   --background: #f7dec9;
   --foreground: #000000;
@@ -7,6 +44,12 @@
   --brand-orange: #f86c2f;
   --brand-pink: #ffb7b8;
   --brand-beige: #f7dec9;
+
+  /* Font Variables */
+  --font-heading-en: 'TAN Tangkiwood', 'Georgia', serif;
+  --font-body-en: 'Garet', 'Arial', sans-serif;
+  --font-heading-ar: 'Ostouri', 'Arial', sans-serif;
+  --font-body-ar: 'Myriad Pro', 'Arial', sans-serif;
 }
 
 @theme inline {
@@ -16,26 +59,63 @@
   --color-brand-orange: var(--brand-orange);
   --color-brand-pink: var(--brand-pink);
   --color-brand-beige: var(--brand-beige);
-  --font-sans: var(--font-inter);
-  --font-arabic: var(--font-ibm-plex-arabic);
+  --font-sans: var(--font-body-en);
+  --font-heading: var(--font-heading-en);
 }
 
+/* ===== Base Typography ===== */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, sans-serif;
+  font-family: var(--font-body-en);
 }
 
-/* RTL Support */
-html[dir="rtl"] {
-  font-family: var(--font-ibm-plex-arabic), var(--font-sans), Arial, sans-serif;
+/* English Headings */
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: var(--font-heading-en);
 }
 
-html[dir="rtl"] body {
-  font-family: var(--font-ibm-plex-arabic), var(--font-sans), Arial, sans-serif;
+/* ===== RTL/Arabic Support ===== */
+html[dir="rtl"],
+html[dir="rtl"] body,
+[dir="rtl"] {
+  font-family: var(--font-body-ar);
 }
 
-/* RTL specific overrides */
+/* Arabic Headings */
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] h5,
+html[dir="rtl"] h6,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6,
+[dir="rtl"] .font-heading {
+  font-family: var(--font-heading-ar);
+}
+
+/* Section-level RTL font override */
+section[dir="rtl"],
+section[dir="rtl"] * {
+  font-family: var(--font-body-ar);
+}
+
+section[dir="rtl"] h1,
+section[dir="rtl"] h2,
+section[dir="rtl"] h3,
+section[dir="rtl"] h4,
+section[dir="rtl"] h5,
+section[dir="rtl"] h6 {
+  font-family: var(--font-heading-ar);
+}
+
+/* ===== RTL Spacing Utilities ===== */
 [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 1;
 }
@@ -48,7 +128,6 @@ html[dir="rtl"] body {
   --tw-space-x-reverse: 1;
 }
 
-/* RTL margin/padding utilities */
 [dir="rtl"] .ml-auto {
   margin-left: 0;
   margin-right: auto;
@@ -59,12 +138,53 @@ html[dir="rtl"] body {
   margin-left: auto;
 }
 
+/* ===== Component Overrides ===== */
+
+/* Buttons - Use heading font for prominence */
+button,
+.btn,
+[class*="Button"] {
+  font-family: var(--font-body-en);
+  font-weight: 600;
+}
+
+[dir="rtl"] button,
+[dir="rtl"] .btn,
+section[dir="rtl"] button {
+  font-family: var(--font-body-ar);
+}
+
+/* Form inputs */
+input,
+textarea,
+select {
+  font-family: var(--font-body-en);
+}
+
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select,
+section[dir="rtl"] input,
+section[dir="rtl"] textarea,
+section[dir="rtl"] select {
+  font-family: var(--font-body-ar);
+}
+
+/* ===== Utility Classes ===== */
+.font-body {
+  font-family: var(--font-body-en);
+}
+
+[dir="rtl"] .font-body {
+  font-family: var(--font-body-ar);
+}
+
 /* Mobile bottom nav spacing */
 .has-bottom-nav {
   padding-bottom: 80px;
 }
 
-/* Custom scrollbar */
+/* ===== Custom Scrollbar ===== */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -82,13 +202,20 @@ html[dir="rtl"] body {
   background: #034a38;
 }
 
-/* Smooth scroll */
+/* ===== Smooth Scroll ===== */
 html {
   scroll-behavior: smooth;
 }
 
-/* Focus styles for accessibility */
+/* ===== Focus Styles for Accessibility ===== */
 *:focus-visible {
   outline: 2px solid var(--brand-orange);
   outline-offset: 2px;
+}
+
+/* ===== Ensure buttons are clickable ===== */
+button {
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
 }

@@ -40,8 +40,8 @@ export function Hero() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
+      {/* Background Pattern - pointer-events-none to allow clicks through */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 rounded-full bg-[var(--brand-orange)]" />
         <div className="absolute top-40 right-20 w-24 h-24 rounded-full bg-[var(--brand-pink)]" />
         <div className="absolute bottom-40 left-1/4 w-40 h-40 rounded-full bg-[var(--brand-green)]" />
