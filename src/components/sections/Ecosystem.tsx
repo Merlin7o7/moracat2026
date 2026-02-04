@@ -144,7 +144,7 @@ export function Ecosystem() {
               <motion.div
                 key={service.id}
                 variants={itemVariants}
-                className="relative bg-[var(--brand-beige)]/50 rounded-2xl p-6 hover:shadow-lg transition-all group"
+                className="relative bg-[var(--brand-beige)]/50 rounded-2xl p-6 hover:shadow-lg transition-all"
               >
                 {/* Status Badge */}
                 <div className="absolute top-4 right-4">
@@ -168,15 +168,9 @@ export function Ecosystem() {
                 <h3 className="text-lg font-bold text-[var(--brand-green)] mb-2">
                   {language === 'ar' ? service.titleAr : service.titleEn}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-gray-600 text-sm">
                   {language === 'ar' ? service.descAr : service.descEn}
                 </p>
-
-                {/* Learn More Link */}
-                <div className={`flex items-center gap-1 text-[var(--brand-orange)] text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span>{language === 'en' ? 'Learn more' : 'اعرف المزيد'}</span>
-                  <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
-                </div>
               </motion.div>
             );
           })}

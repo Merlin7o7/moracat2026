@@ -134,18 +134,6 @@ export function BrandGrid() {
           ))}
         </motion.div>
 
-        {/* Bottom Note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="text-center text-gray-500 text-sm mt-10"
-        >
-          {language === 'en'
-            ? '* Product brands may vary based on availability. Quality always guaranteed.'
-            : '* قد تختلف العلامات التجارية حسب التوفر. الجودة مضمونة دائماً.'}
-        </motion.p>
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import {
   SavingsCalculator,
   SubscriptionBuilder,
   VetSupport,
+  WhyMoracat,
   Ecosystem,
   About,
   FAQ,
@@ -22,6 +23,7 @@ export default function Home() {
       <Products />
       <BrandGrid />
       <VetSupport />
+      <WhyMoracat />
       <Subscription />
       <BoxShowcase />
       <SavingsCalculator />

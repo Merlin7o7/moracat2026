@@ -11,7 +11,6 @@ import {
   Facebook,
   Send,
   Mail,
-  Phone,
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,18 +38,13 @@ export function Footer() {
       { label: footer.aboutUs[language], href: "#about" },
       { label: footer.howItWorksLink[language], href: "#how-it-works" },
       { label: footer.ourProducts[language], href: "#products" },
-      { label: footer.careers[language], href: "#" },
     ],
     support: [
       { label: nav.faq[language], href: "#faq" },
-      { label: footer.contactUs[language], href: "#" },
-      { label: footer.shippingInfo[language], href: "#" },
-      { label: footer.returns[language], href: "#" },
     ],
     legal: [
       { label: footer.privacyPolicy[language], href: "/privacy" },
       { label: footer.termsOfService[language], href: "/terms" },
-      { label: footer.cookiePolicy[language], href: "#" },
     ],
   };
 
@@ -218,19 +212,9 @@ export function Footer() {
                 </a>
               </li>
               <li className="flex items-start gap-2 text-white/70">
-                <Phone className="w-4 h-4 mt-1 flex-shrink-0" />
-                <a
-                  href="tel:+966501234567"
-                  className="hover:text-white transition-colors"
-                  dir="ltr"
-                >
-                  +966 50 123 4567
-                </a>
-              </li>
-              <li className="flex items-start gap-2 text-white/70">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
                 <span>
-                  {language === "en" ? "Riyadh, Saudi Arabia" : "الرياض، المملكة العربية السعودية"}
+                  {language === "en" ? "Jeddah & Riyadh, Saudi Arabia" : "جدة والرياض، المملكة العربية السعودية"}
                 </span>
               </li>
             </ul>

@@ -8,6 +8,7 @@ export { BoxShowcase } from "./BoxShowcase";
 export { SavingsCalculator } from "./SavingsCalculator";
 export { SubscriptionBuilder } from "./SubscriptionBuilder";
 export { VetSupport } from "./VetSupport";
+export { WhyMoracat } from "./WhyMoracat";
 export { Ecosystem } from "./Ecosystem";
 export { About } from "./About";
 export { FAQ } from "./FAQ";

@@ -9,7 +9,7 @@ export const translations = {
   // Common UI Elements
   common: {
     moracat: { en: 'Moracat', ar: 'مرقط' },
-    joinWaitlist: { en: 'Join the Waitlist', ar: 'انضم لقائمة الانتظار' },
+    joinWaitlist: { en: 'Reserve My Spot — 20% Off First Order', ar: 'احجز مكاني — خصم 20% على الطلب الأول' },
     calculatePlan: { en: 'Calculate My Plan', ar: 'احسب خطتي' },
     learnMore: { en: 'Learn More', ar: 'اعرف المزيد' },
     subscribe: { en: 'Subscribe', ar: 'اشترك' },
@@ -28,7 +28,7 @@ export const translations = {
     monthly: { en: 'Monthly', ar: 'شهري' },
     yearly: { en: 'Yearly', ar: 'سنوي' },
     save: { en: 'Save', ar: 'وفّر' },
-    popular: { en: 'Most Popular', ar: 'الأكثر طلباً' },
+    popular: { en: 'Recommended', ar: 'موصى به' },
     comingSoon: { en: 'Coming Soon', ar: 'قريباً' },
     launchingSoon: { en: 'Launching Soon', ar: 'الإطلاق قريباً' },
     saveAndJoin: { en: 'Save Plan & Join Waitlist', ar: 'احفظ الخطة وانضم للقائمة' },
@@ -54,13 +54,13 @@ export const translations = {
     title2: { en: 'Delivered', ar: 'توصَل' },
     title3: { en: 'Monthly', ar: 'شهرياً' },
     subtitle: {
-      en: 'Personalized, vet-backed food plans delivered to your door. No more last-minute pet store runs.',
-      ar: 'خطط غذائية مخصصة ومعتمدة من الأطباء البيطريين توصل لباب بيتك. ودّع زيارات المحلات المفاجئة.'
+      en: 'Premium cat food from trusted brands — personalized, vet-approved, and delivered monthly. Say goodbye to pet store runs.',
+      ar: 'طعام قطط فاخر من علامات تجارية موثوقة — مخصص، معتمد بيطرياً، ويوصَل شهرياً. ودّع زيارات المحلات.'
     },
     ctaPrimary: { en: 'Join the Waitlist', ar: 'انضم لقائمة الانتظار' },
     ctaSecondary: { en: 'Calculate My Cat\'s Plan', ar: 'احسب خطة قطتي' },
     trustBadge1: { en: 'Vet-Approved Portions', ar: 'كميات معتمدة بيطرياً' },
-    trustBadge2: { en: 'Free Delivery in KSA', ar: 'توصيل مجاني في السعودية' },
+    trustBadge2: { en: 'Free Delivery to Jeddah, Riyadh & All Major Cities', ar: 'توصيل مجاني لجدة والرياض وجميع المدن الرئيسية' },
     trustBadge3: { en: 'Cancel Anytime', ar: 'إلغاء في أي وقت' },
   },
 
@@ -270,8 +270,8 @@ export const translations = {
     },
     q1: { en: 'When will Moracat launch?', ar: 'متى سيُطلق مرقط؟' },
     a1: {
-      en: 'We\'re launching soon! Join the waitlist to be among the first to know and get exclusive early-access benefits.',
-      ar: 'نحن على وشك الإطلاق! انضم لقائمة الانتظار لتكون من أوائل من يعرف وتحصل على مميزات الوصول المبكر الحصرية.'
+      en: 'We\'re launching in Q2 2026. Waitlist members get 20% off their first order plus free premium treats. Reserve your spot now!',
+      ar: 'نحن سنُطلق في الربع الثاني من 2026. أعضاء قائمة الانتظار يحصلون على خصم 20% على طلبهم الأول بالإضافة إلى مكافآت فاخرة مجانية. احجز مكانك الآن!'
     },
     q2: { en: 'How does the subscription work?', ar: 'كيف يعمل الاشتراك؟' },
     a2: {

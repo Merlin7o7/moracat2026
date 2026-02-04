@@ -542,6 +542,17 @@ export function SubscriptionBuilder() {
                     </div>
                   </div>
                 </div>
+
+                {/* Reserve This Plan Button */}
+                <Button
+                  variant="primary"
+                  className="w-full mt-6"
+                  onClick={scrollToWaitlist}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {language === "en" ? "Reserve This Plan" : "احجز هذه الباقة"}
+                  <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
+                </Button>
               </Card>
             </div>
           </div>

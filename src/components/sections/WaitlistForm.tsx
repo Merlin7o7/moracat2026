@@ -184,10 +184,15 @@ export function WaitlistForm() {
                         <CheckCircle className="w-10 h-10 text-white" />
                       </div>
                       <h3 className="text-2xl font-bold text-[var(--brand-green)] mb-3">
-                        {language === "en" ? "You're on the list!" : "أنت في القائمة!"}
+                        {language === "en" ? "You're In! 🐱" : "أنت معنا! 🐱"}
                       </h3>
-                      <p className="text-gray-600 mb-6">
-                        {waitlist.success[language]}
+                      <p className="text-[var(--brand-green)] font-medium mb-2">
+                        {language === "en" ? "Thanks for joining the Moracat family." : "شكراً لانضمامك لعائلة مرقط."}
+                      </p>
+                      <p className="text-gray-600 mb-6 text-sm">
+                        {language === "en"
+                          ? "You're now on our early access list. We'll email you as soon as we launch — plus you'll get 20% off your first order."
+                          : "أنت الآن في قائمة الوصول المبكر. سنراسلك فور إطلاقنا — بالإضافة إلى خصم 20% على طلبك الأول."}
                       </p>
                       <Button
                         variant="outline"
